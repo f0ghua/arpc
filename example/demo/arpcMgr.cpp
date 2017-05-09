@@ -29,6 +29,7 @@ bool ManagerProcessor::process(boost::shared_ptr<protocol::TProtocol> in,
     case protocol::T_CALL:
     case protocol::T_ONEWAY:
     {
+        // got request from client, find the host and route to it
         break;
     }
     default:

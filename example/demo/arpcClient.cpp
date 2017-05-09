@@ -20,6 +20,7 @@
 #include <iostream>
 
 #include <thrift/protocol/TBinaryProtocol.h>
+#include <thrift/protocol/TJSONProtocol.h>
 #include <thrift/transport/TSocket.h>
 #include <thrift/transport/TTransportUtils.h>
 
@@ -36,13 +37,15 @@ int main()
 {
     boost::shared_ptr<TTransport> socket(new TSocket("localhost", 9090));
     boost::shared_ptr<TTransport> transport(new TBufferedTransport(socket));
-    boost::shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
+    //boost::shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
+    boost::shared_ptr<TProtocol> protocol(new TJSONProtocol(transport));
+    
     DemoServiceClient client(protocol);
 
     try {
         transport->open();
 
-        client.setStruct(101, "Hello World");
+        client.setStruct(100, "Hello World");
         cout << "Set struct: " << endl;
 
 /*

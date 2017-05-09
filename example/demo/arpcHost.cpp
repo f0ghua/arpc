@@ -20,6 +20,7 @@
 #include <thrift/concurrency/ThreadManager.h>
 #include <thrift/concurrency/PlatformThreadFactory.h>
 #include <thrift/protocol/TBinaryProtocol.h>
+#include <thrift/protocol/TJSONProtocol.h>
 #include <thrift/server/TSimpleServer.h>
 #include <thrift/server/TThreadPoolServer.h>
 #include <thrift/server/TThreadedServer.h>
@@ -45,7 +46,7 @@ using namespace apache::thrift::server;
 
 using boost::shared_ptr;
 
-using namespace  ::demo;
+using namespace demo;
 
 class DemoServiceHandler : virtual public DemoServiceIf {
 public:
@@ -79,8 +80,9 @@ int main(int argc, char **argv) {
     shared_ptr<TProcessor> processor(new DemoServiceProcessor(handler));
     shared_ptr<TServerTransport> serverTransport(new TServerSocket(port));
     shared_ptr<TTransportFactory> transportFactory(new TBufferedTransportFactory());
-    shared_ptr<TProtocolFactory> protocolFactory(new TBinaryProtocolFactory());
-
+    //shared_ptr<TProtocolFactory> protocolFactory(new TBinaryProtocolFactory());
+    shared_ptr<TProtocolFactory> protocolFactory(new TJSONProtocolFactory());
+    
     TSimpleServer server(processor, serverTransport, transportFactory, protocolFactory);
 
     cout << "Host is in service ..." << endl;
