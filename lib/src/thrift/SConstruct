@@ -1,0 +1,64 @@
+import os
+import platform
+
+env = DefaultEnvironment()
+debug = ARGUMENTS.get('debug', 0)
+release = ARGUMENTS.get('release', 0)
+
+if int(release) == 1:
+  env['objroot'] = env.Dir('build/release').abspath
+  env['DEBUG'] = False
+  env.Append(CCFLAGS=' -O -DNDEBUG')
+else:
+  env['objroot'] = env.Dir('build/debug').abspath
+  env['DEBUG'] = True
+  env.Append(CCFLAGS=' -g -Wall -Werror')
+  
+env['srcroot'] = env.Dir('.').abspath
+env['approot'] = env.Dir('..').abspath
+objroot = env['objroot']
+srcroot = env['srcroot']
+
+env.Append(CPPPATH=[env['approot'], env['objroot'], env['srcroot']])
+Export('env')
+
+VariantDir(objroot, 'transport', duplicate=1)
+
+transport_src_files = Glob('transport/*.cpp');
+protocol_src_files = Glob('protocol/*.cpp');
+processor_src_files = Glob('processor/*.cpp');
+server_src_files = [
+	'server/TConnectedClient.cpp',
+	'server/TServer.cpp',
+	'server/TServerFramework.cpp',
+	'server/TSimpleServer.cpp',
+	'server/TThreadedServer.cpp',
+	'server/TThreadPoolServer.cpp',
+#	'server/TNonblockingServer.cpp',
+]
+
+concurrency_src_files = [
+	'concurrency/Monitor.cpp',
+	'concurrency/Mutex.cpp',
+	'concurrency/PosixThreadFactory.cpp',
+	'concurrency/ThreadManager.cpp',
+	'concurrency/TimerManager.cpp',
+	'concurrency/Util.cpp',
+]
+
+async_src_files = [
+	'async/TAsyncChannel.cpp',
+	'async/TConcurrentClientSyncInfo.cpp',
+]
+
+env.SharedLibrary(target = 'arpc',
+	source = [
+		transport_src_files,
+		protocol_src_files,
+		processor_src_files,
+		server_src_files,
+		concurrency_src_files,
+		async_src_files,
+		Glob('*.cpp'),
+	])
+

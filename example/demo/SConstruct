@@ -1,0 +1,58 @@
+import os
+import platform
+
+env = DefaultEnvironment()
+debug = ARGUMENTS.get('debug', 0)
+release = ARGUMENTS.get('release', 0)
+
+if int(release) == 1:
+  env['objroot'] = env.Dir('build/release').abspath
+  env['DEBUG'] = False
+  env.Append(CCFLAGS='-O -DNDEBUG')
+else:
+  env['objroot'] = env.Dir('build/debug').abspath
+  env['DEBUG'] = True
+  env.Append(CCFLAGS=' -g -Wall -Werror')
+
+env['srcroot'] = env.Dir('.').abspath
+env['approot'] = env.Dir('../..').abspath
+objroot = env['objroot']
+srcroot = env['srcroot']
+
+lib_header = env.Dir('../../lib/src').abspath
+lib_path = env.Dir('../../lib/src/thrift').abspath
+env.Append(CPPPATH=[lib_header])
+Export('env')
+
+def create_objs(SRCS, path=""):
+    return [env.Object(path+src) for src in SRCS]
+
+gen_cpp_files = [
+	'gen-cpp/DemoService.cpp',
+	'gen-cpp/demo_types.cpp',
+	'gen-cpp/demo_constants.cpp',
+]
+
+src_files_client = [
+	'arpcClient.cpp',
+]
+
+src_files_host = [
+	'arpcHost.cpp',
+]
+
+src_files_server = [
+	'arpcServer.cpp',
+	'arpcMgr.cpp',
+]
+
+header_files = [
+
+]
+
+env.Program('arpcClient', [src_files_client, create_objs(gen_cpp_files)], LIBS = ['arpc', 'ssl', 'pthread', 'z'], LIBPATH = lib_path)
+env.Program('arpcHost', [src_files_host, create_objs(gen_cpp_files)], LIBS = ['arpc', 'ssl', 'pthread', 'z'], LIBPATH = lib_path)
+env.Program('arpcServer', [src_files_server, create_objs(gen_cpp_files)], LIBS = ['arpc', 'ssl', 'pthread', 'z'], LIBPATH = lib_path)
+
+
+
