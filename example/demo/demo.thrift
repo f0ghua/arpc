@@ -33,3 +33,8 @@ service DemoService {
 	void setStruct(1:i32 intValue, 2:string strValue)
 	DemoStruct getStruct()
 }
+
+service DemoEvent {
+	oneway void notifyDemoSevice(1: DemoStruct vars)
+	oneway void notifySecdSevice(1: DemoStruct vars)
+}

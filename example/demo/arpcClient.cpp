@@ -24,7 +24,9 @@
 #include <thrift/transport/TSocket.h>
 #include <thrift/transport/TTransportUtils.h>
 
+#include "./gen-cpp/SharedProtocol.h"
 #include "./gen-cpp/DemoService.h"
+#include "./gen-cpp/DemoEvent.h"
 
 using namespace std;
 using namespace apache::thrift;

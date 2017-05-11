@@ -34,6 +34,7 @@ gen_cpp_files = [
 	'gen-cpp/SharedProtocol.cpp',
 	'gen-cpp/shared_types.cpp',
 	'gen-cpp/shared_constants.cpp',
+	'gen-cpp/DemoEvent.cpp',
 ]
 
 src_files_client = [

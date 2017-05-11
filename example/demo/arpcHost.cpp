@@ -37,6 +37,7 @@
 
 #include "./gen-cpp/SharedProtocol.h"
 #include "./gen-cpp/DemoService.h"
+#include "./gen-cpp/DemoEvent.h"
 
 using namespace std;
 using namespace apache::thrift;
@@ -87,7 +88,8 @@ int main(int argc, char **argv) {
         hostId = atoi(argv[1]);
         port = atoi(argv[2]);
     }
-    
+
+    // act as a client to register services
     boost::shared_ptr<TTransport> socket(new TSocket("localhost", 9090));
     boost::shared_ptr<TTransport> transport(new TBufferedTransport(socket));
     //boost::shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
@@ -96,13 +98,16 @@ int main(int argc, char **argv) {
 
     transport->open();
     std::vector<std::string> services;
-    if (hostId == 0)
+    if (hostId == 0) {
         services.push_back("setStruct");
-    else
+    }
+    else {
         services.push_back("getStruct");
+    }
     client.serviceRegister(services, port);
     transport->close();
 
+    // act as a server to handle service requests
     shared_ptr<DemoServiceHandler> handler(new DemoServiceHandler());
     shared_ptr<TProcessor> processor(new DemoServiceProcessor(handler));
     shared_ptr<TServerTransport> serverTransport(new TServerSocket(port));

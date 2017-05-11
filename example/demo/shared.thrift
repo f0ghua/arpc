@@ -27,4 +27,6 @@ namespace cpp shared
 service SharedProtocol {
 	i32 serviceRegister(1: list<string> methodName, 2: i16 sevicePort)
 	void serviceUnregister(1: list<string> methodName)
+	i32 eventSubscribe(1: list<string> evnetName)
+	void eventUnsubscribe(1: list<string> evnetName)
 }

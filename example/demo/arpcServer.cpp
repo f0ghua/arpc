@@ -37,6 +37,7 @@
 
 #include "./gen-cpp/SharedProtocol.h"
 #include "./gen-cpp/DemoService.h"
+#include "./gen-cpp/DemoEvent.h"
 
 using namespace std;
 using namespace apache::thrift;
@@ -91,7 +92,7 @@ public:
             cout << "The request service has not been registeted." << endl;
             for (ci = hostServiceMap.begin(); ci != hostServiceMap.end(); ci++) {
                 GlobalOutput.printf("hostServiceMap - %s, %s:%d", 
-                    ci->first.c_str(), ci->second.addr.c_str(), ci->second.port);
+                                    ci->first.c_str(), ci->second.addr.c_str(), ci->second.port);
             }
             // how to handle if no service exist?
             return;
@@ -128,7 +129,7 @@ public:
             cout << "The request service has not been registeted." << endl;
             for (ci = hostServiceMap.begin(); ci != hostServiceMap.end(); ci++) {
                 GlobalOutput.printf("hostServiceMap - %s, %s:%d", 
-                    ci->first.c_str(), ci->second.addr.c_str(), ci->second.port);
+                                    ci->first.c_str(), ci->second.addr.c_str(), ci->second.port);
             }
             // how to handle if no service exist?
             return;
@@ -155,6 +156,16 @@ public:
         }
     }
 
+    void notifyDemoSevice(const DemoStruct& vars, void *callContext) {
+        // Your implementation goes here
+        printf("notifyDemoSevice\n");
+    }
+    
+    void notifySecdSevice(const DemoStruct& vars, void *callContext) {
+        // Your implementation goes here
+        printf("notifySecdSevice\n");
+    }
+
     int32_t serviceRegister(const std::vector<std::string> & methodName, const int16_t sevicePort, void *callContext) {
         cout << "from host, register service: " << endl;
         for (std::vector<std::string>::const_iterator i = methodName.begin(); 
@@ -168,6 +179,17 @@ public:
     
     void serviceUnregister(const std::vector<std::string> & methodName, void *callContext) {
 
+    }
+
+    int32_t eventSubscribe(const std::vector<std::string> & evnetName, void *callContext) {
+        // Your implementation goes here
+        printf("eventSubscribe\n");
+        return 0;
+    }
+
+    void eventUnsubscribe(const std::vector<std::string> & evnetName, void *callContext) {
+        // Your implementation goes here
+        printf("eventUnsubscribe\n");
     }
 
 private:
@@ -197,9 +219,14 @@ private:
     void process_serviceRegister(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
     void process_serviceUnregister(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
 
+    void process_eventSubscribe(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
+    void process_eventUnsubscribe(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
+
     void process_setStruct(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
     void process_getStruct(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
 
+    void process_notifyDemoSevice(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
+    void process_notifySecdSevice(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
 
 public:
     PSProcessor(boost::shared_ptr<PSHandler> iface) :
@@ -207,8 +234,14 @@ public:
         processMap_["serviceRegister"] = &PSProcessor::process_serviceRegister;
         processMap_["serviceUnregister"] = &PSProcessor::process_serviceUnregister;
 
+        processMap_["eventSubscribe"] = &PSProcessor::process_eventSubscribe;
+        processMap_["eventUnsubscribe"] = &PSProcessor::process_eventUnsubscribe;
+
         processMap_["setStruct"] = &PSProcessor::process_setStruct;
         processMap_["getStruct"] = &PSProcessor::process_getStruct;
+
+        processMap_["notifyDemoSevice"] = &PSProcessor::process_notifyDemoSevice;
+        processMap_["notifySecdSevice"] = &PSProcessor::process_notifySecdSevice;
     }
 
     virtual ~PSProcessor() {}
@@ -372,6 +405,113 @@ void PSProcessor::process_serviceUnregister(int32_t seqid, ::apache::thrift::pro
     }
 }
 
+void PSProcessor::process_eventSubscribe(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext)
+{
+    void* ctx = NULL;
+    if (this->eventHandler_.get() != NULL) {
+        ctx = this->eventHandler_->getContext("SharedProtocol.eventSubscribe", callContext);
+    }
+    ::apache::thrift::TProcessorContextFreer freer(this->eventHandler_.get(), ctx, "SharedProtocol.eventSubscribe");
+
+    if (this->eventHandler_.get() != NULL) {
+        this->eventHandler_->preRead(ctx, "SharedProtocol.eventSubscribe");
+    }
+
+    SharedProtocol_eventSubscribe_args args;
+    args.read(iprot);
+    iprot->readMessageEnd();
+    uint32_t bytes = iprot->getTransport()->readEnd();
+
+    if (this->eventHandler_.get() != NULL) {
+        this->eventHandler_->postRead(ctx, "SharedProtocol.eventSubscribe", bytes);
+    }
+
+    SharedProtocol_eventSubscribe_result result;
+    try {
+        result.success = iface_->eventSubscribe(args.evnetName, callContext);
+        result.__isset.success = true;
+    } catch (const std::exception& e) {
+        if (this->eventHandler_.get() != NULL) {
+            this->eventHandler_->handlerError(ctx, "SharedProtocol.eventSubscribe");
+        }
+
+        ::apache::thrift::TApplicationException x(e.what());
+        oprot->writeMessageBegin("eventSubscribe", ::apache::thrift::protocol::T_EXCEPTION, seqid);
+        x.write(oprot);
+        oprot->writeMessageEnd();
+        oprot->getTransport()->writeEnd();
+        oprot->getTransport()->flush();
+        return;
+    }
+
+    if (this->eventHandler_.get() != NULL) {
+        this->eventHandler_->preWrite(ctx, "SharedProtocol.eventSubscribe");
+    }
+
+    oprot->writeMessageBegin("eventSubscribe", ::apache::thrift::protocol::T_REPLY, seqid);
+    result.write(oprot);
+    oprot->writeMessageEnd();
+    bytes = oprot->getTransport()->writeEnd();
+    oprot->getTransport()->flush();
+
+    if (this->eventHandler_.get() != NULL) {
+        this->eventHandler_->postWrite(ctx, "SharedProtocol.eventSubscribe", bytes);
+    }
+}
+
+void PSProcessor::process_eventUnsubscribe(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext)
+{
+    void* ctx = NULL;
+    if (this->eventHandler_.get() != NULL) {
+        ctx = this->eventHandler_->getContext("SharedProtocol.eventUnsubscribe", callContext);
+    }
+    ::apache::thrift::TProcessorContextFreer freer(this->eventHandler_.get(), ctx, "SharedProtocol.eventUnsubscribe");
+
+    if (this->eventHandler_.get() != NULL) {
+        this->eventHandler_->preRead(ctx, "SharedProtocol.eventUnsubscribe");
+    }
+
+    SharedProtocol_eventUnsubscribe_args args;
+    args.read(iprot);
+    iprot->readMessageEnd();
+    uint32_t bytes = iprot->getTransport()->readEnd();
+
+    if (this->eventHandler_.get() != NULL) {
+        this->eventHandler_->postRead(ctx, "SharedProtocol.eventUnsubscribe", bytes);
+    }
+
+    SharedProtocol_eventUnsubscribe_result result;
+    try {
+        iface_->eventUnsubscribe(args.evnetName, callContext);
+    } catch (const std::exception& e) {
+        if (this->eventHandler_.get() != NULL) {
+            this->eventHandler_->handlerError(ctx, "SharedProtocol.eventUnsubscribe");
+        }
+
+        ::apache::thrift::TApplicationException x(e.what());
+        oprot->writeMessageBegin("eventUnsubscribe", ::apache::thrift::protocol::T_EXCEPTION, seqid);
+        x.write(oprot);
+        oprot->writeMessageEnd();
+        oprot->getTransport()->writeEnd();
+        oprot->getTransport()->flush();
+        return;
+    }
+
+    if (this->eventHandler_.get() != NULL) {
+        this->eventHandler_->preWrite(ctx, "SharedProtocol.eventUnsubscribe");
+    }
+
+    oprot->writeMessageBegin("eventUnsubscribe", ::apache::thrift::protocol::T_REPLY, seqid);
+    result.write(oprot);
+    oprot->writeMessageEnd();
+    bytes = oprot->getTransport()->writeEnd();
+    oprot->getTransport()->flush();
+
+    if (this->eventHandler_.get() != NULL) {
+        this->eventHandler_->postWrite(ctx, "SharedProtocol.eventUnsubscribe", bytes);
+    }
+}
+
 void PSProcessor::process_setStruct(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext)
 {
     void* ctx = NULL;
@@ -477,6 +617,80 @@ void PSProcessor::process_getStruct(int32_t seqid, ::apache::thrift::protocol::T
     if (this->eventHandler_.get() != NULL) {
         this->eventHandler_->postWrite(ctx, "DemoService.getStruct", bytes);
     }
+}
+
+void PSProcessor::process_notifyDemoSevice(int32_t, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol*, void* callContext)
+{
+    void* ctx = NULL;
+    if (this->eventHandler_.get() != NULL) {
+        ctx = this->eventHandler_->getContext("DemoEvent.notifyDemoSevice", callContext);
+    }
+    ::apache::thrift::TProcessorContextFreer freer(this->eventHandler_.get(), ctx, "DemoEvent.notifyDemoSevice");
+
+    if (this->eventHandler_.get() != NULL) {
+        this->eventHandler_->preRead(ctx, "DemoEvent.notifyDemoSevice");
+    }
+
+    DemoEvent_notifyDemoSevice_args args;
+    args.read(iprot);
+    iprot->readMessageEnd();
+    uint32_t bytes = iprot->getTransport()->readEnd();
+
+    if (this->eventHandler_.get() != NULL) {
+        this->eventHandler_->postRead(ctx, "DemoEvent.notifyDemoSevice", bytes);
+    }
+
+    try {
+        iface_->notifyDemoSevice(args.vars, callContext);
+    } catch (const std::exception&) {
+        if (this->eventHandler_.get() != NULL) {
+            this->eventHandler_->handlerError(ctx, "DemoEvent.notifyDemoSevice");
+        }
+        return;
+    }
+
+    if (this->eventHandler_.get() != NULL) {
+        this->eventHandler_->asyncComplete(ctx, "DemoEvent.notifyDemoSevice");
+    }
+
+    return;
+}
+
+void PSProcessor::process_notifySecdSevice(int32_t, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol*, void* callContext)
+{
+    void* ctx = NULL;
+    if (this->eventHandler_.get() != NULL) {
+        ctx = this->eventHandler_->getContext("DemoEvent.notifySecdSevice", callContext);
+    }
+    ::apache::thrift::TProcessorContextFreer freer(this->eventHandler_.get(), ctx, "DemoEvent.notifySecdSevice");
+
+    if (this->eventHandler_.get() != NULL) {
+        this->eventHandler_->preRead(ctx, "DemoEvent.notifySecdSevice");
+    }
+
+    DemoEvent_notifySecdSevice_args args;
+    args.read(iprot);
+    iprot->readMessageEnd();
+    uint32_t bytes = iprot->getTransport()->readEnd();
+
+    if (this->eventHandler_.get() != NULL) {
+        this->eventHandler_->postRead(ctx, "DemoEvent.notifySecdSevice", bytes);
+    }
+
+    try {
+        iface_->notifySecdSevice(args.vars, callContext);
+    } catch (const std::exception&) {
+        if (this->eventHandler_.get() != NULL) {
+            this->eventHandler_->handlerError(ctx, "DemoEvent.notifySecdSevice");
+        }
+        return;
+    }
+
+    if (this->eventHandler_.get() != NULL) {
+        this->eventHandler_->asyncComplete(ctx, "DemoEvent.notifySecdSevice");
+    }
+
+    return;
 }
 
 
