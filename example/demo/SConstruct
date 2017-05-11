@@ -43,6 +43,7 @@ src_files_client = [
 
 src_files_host = [
 	'arpcHost.cpp',
+	'ThreadBase.cpp',
 ]
 
 src_files_server = [

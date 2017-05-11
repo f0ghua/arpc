@@ -79,6 +79,23 @@ private:
     string strValue_;
 };
 
+#include "ThreadBase.h"
+
+class MyThread : public ThreadBase {
+	public:
+		MyThread() {}
+		~MyThread() {}
+		virtual void run();
+};
+
+void MyThread::run()
+{
+	int i = 0;
+	while(1) {
+		cout << "count " << i++ << endl;
+		sleep(1);
+	}
+}
 
 int main(int argc, char **argv) {
     int port = 9091;
@@ -88,6 +105,10 @@ int main(int argc, char **argv) {
         hostId = atoi(argv[1]);
         port = atoi(argv[2]);
     }
+
+    MyThread mt;
+    mt.start();
+    //mt.join();
 
     // act as a client to register services
     boost::shared_ptr<TTransport> socket(new TSocket("localhost", 9090));
