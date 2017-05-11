@@ -122,7 +122,24 @@ public:
         // Your implementation goes here
         cout << "from client, getStruct:" << endl;
         
-        boost::shared_ptr<TTransport> socket(new TSocket("localhost", 9091));
+#ifndef NDEBUG
+        map<string, HostInfo>::const_iterator ci = hostServiceMap.find((char *)callContext);
+        if (ci == hostServiceMap.end()) {
+            cout << "The request service has not been registeted." << endl;
+            for (ci = hostServiceMap.begin(); ci != hostServiceMap.end(); ci++) {
+                GlobalOutput.printf("hostServiceMap - %s, %s:%d", 
+                    ci->first.c_str(), ci->second.addr.c_str(), ci->second.port);
+            }
+            // how to handle if no service exist?
+            return;
+            //throw; // std::exception();
+        }
+
+        HostInfo hi = ci->second;
+        GlobalOutput.printf("The service is registered by %s:%d", hi.addr.c_str(), hi.port);
+#endif        
+
+        boost::shared_ptr<TTransport> socket(new TSocket(hi.addr, hi.port));
         boost::shared_ptr<TTransport> transport(new TBufferedTransport(socket));
         //boost::shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
         boost::shared_ptr<TProtocol> protocol(new TJSONProtocol(transport));

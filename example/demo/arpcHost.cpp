@@ -54,6 +54,8 @@ class DemoServiceHandler : virtual public DemoServiceIf {
 public:
     DemoServiceHandler() {
         // Your initialization goes here
+        intValue_ = 0;
+        strValue_ = "uninitialize";
     }
 
     void setStruct(const int32_t intValue, const std::string& strValue) {
@@ -79,7 +81,13 @@ private:
 
 int main(int argc, char **argv) {
     int port = 9091;
-
+    int hostId = 0;
+    
+    if (argc > 2) {
+        hostId = atoi(argv[1]);
+        port = atoi(argv[2]);
+    }
+    
     boost::shared_ptr<TTransport> socket(new TSocket("localhost", 9090));
     boost::shared_ptr<TTransport> transport(new TBufferedTransport(socket));
     //boost::shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
@@ -88,10 +96,13 @@ int main(int argc, char **argv) {
 
     transport->open();
     std::vector<std::string> services;
-    services.push_back("setStruct");
+    if (hostId == 0)
+        services.push_back("setStruct");
+    else
+        services.push_back("getStruct");
     client.serviceRegister(services, port);
     transport->close();
-    
+
     shared_ptr<DemoServiceHandler> handler(new DemoServiceHandler());
     shared_ptr<TProcessor> processor(new DemoServiceProcessor(handler));
     shared_ptr<TServerTransport> serverTransport(new TServerSocket(port));
