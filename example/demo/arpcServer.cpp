@@ -57,6 +57,7 @@ struct HostInfo {
 };
 
 static std::map<std::string, HostInfo> hostServiceMap;
+static std::map<std::string, HostInfo> clientEventMap;
 
 class ServerEventHandler : public TServerEventHandler {
 
@@ -158,7 +159,39 @@ public:
 
     void notifyDemoSevice(const DemoStruct& vars, void *callContext) {
         // Your implementation goes here
-        printf("notifyDemoSevice\n");
+        cout << "from client, getStruct:" << endl;
+                
+#ifndef NDEBUG
+        map<string, HostInfo>::const_iterator ci = clientEventMap.find((char *)callContext);
+        if (ci == clientEventMap.end()) {
+            cout << "The event has not been subscribed." << endl;
+            for (ci = clientEventMap.begin(); ci != clientEventMap.end(); ci++) {
+                GlobalOutput.printf("clientEventMap - %s, %s:%d", 
+                                    ci->first.c_str(), ci->second.addr.c_str(), ci->second.port);
+            }
+            // how to handle if no service exist?
+            return;
+            //throw; // std::exception();
+        }
+        
+        HostInfo hi = ci->second;
+        GlobalOutput.printf("The event is subscribed by %s:%d", hi.addr.c_str(), hi.port);
+#endif        
+        
+        boost::shared_ptr<TTransport> socket(new TSocket(hi.addr, hi.port));
+        boost::shared_ptr<TTransport> transport(new TBufferedTransport(socket));
+        //boost::shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
+        boost::shared_ptr<TProtocol> protocol(new TJSONProtocol(transport));
+        
+        DemoEventClient client(protocol);
+        try {
+            transport->open();
+            client.notifyDemoSevice(vars);
+            cout << "route event from host, notifyDemoSevice: " << vars << endl;
+            transport->close();
+        } catch (TException& tx) {
+            cout << "ERROR: " << tx.what() << endl;
+        }
     }
     
     void notifySecdSevice(const DemoStruct& vars, void *callContext) {
@@ -181,13 +214,13 @@ public:
 
     }
 
-    int32_t eventSubscribe(const std::vector<std::string> & evnetName, void *callContext) {
+    int32_t eventSubscribe(const std::vector<std::string> & eventName, const int16_t eventPort, void *callContext) {
         // Your implementation goes here
         printf("eventSubscribe\n");
         return 0;
     }
 
-    void eventUnsubscribe(const std::vector<std::string> & evnetName, void *callContext) {
+    void eventUnsubscribe(const std::vector<std::string> & eventName, void *callContext) {
         // Your implementation goes here
         printf("eventUnsubscribe\n");
     }
@@ -426,9 +459,28 @@ void PSProcessor::process_eventSubscribe(int32_t seqid, ::apache::thrift::protoc
         this->eventHandler_->postRead(ctx, "SharedProtocol.eventSubscribe", bytes);
     }
 
+#ifndef NDEBUG
+    // try to get the address and port of peer
+    TBufferedTransport *tbuf = dynamic_cast<TBufferedTransport *>(iprot->getTransport().get()); 
+    TSocket *socket = dynamic_cast<TSocket *>(tbuf->getUnderlyingTransport().get()); 
+    cout << "client subscribe event from addr " << socket->getPeerHost() << ", port " << socket->getPeerPort() << endl;
+        
+    cout << "callContext = " << (char *)callContext << endl;
+        
+    HostInfo hi;
+    hi.addr = socket->getPeerHost();
+    hi.port = args.eventPort;
+    
+    for (vector<string>::const_iterator ci = args.eventName.begin();
+         ci != args.eventName.end();
+         ci++) {
+        clientEventMap[*ci] = hi;
+    }
+#endif
+
     SharedProtocol_eventSubscribe_result result;
     try {
-        result.success = iface_->eventSubscribe(args.evnetName, callContext);
+        result.success = iface_->eventSubscribe(args.eventName, args.eventPort, callContext);
         result.__isset.success = true;
     } catch (const std::exception& e) {
         if (this->eventHandler_.get() != NULL) {
@@ -480,9 +532,31 @@ void PSProcessor::process_eventUnsubscribe(int32_t seqid, ::apache::thrift::prot
         this->eventHandler_->postRead(ctx, "SharedProtocol.eventUnsubscribe", bytes);
     }
 
+#ifndef NDEBUG
+    // try to get the address and port of peer
+    TBufferedTransport *tbuf = dynamic_cast<TBufferedTransport *>(iprot->getTransport().get()); 
+    TSocket *socket = dynamic_cast<TSocket *>(tbuf->getUnderlyingTransport().get()); 
+    cout << "client unsubscribe event from addr " << socket->getPeerHost() << ", port " << socket->getPeerPort() << endl;
+            
+    cout << "callContext = " << (char *)callContext << endl;
+            
+    HostInfo hi;
+    hi.addr = socket->getPeerHost();
+    hi.port = 0;
+
+    for (vector<string>::const_iterator ci = args.eventName.begin();
+         ci != args.eventName.end();
+         ci++) {
+        std::map<std::string, HostInfo>::const_iterator i = clientEventMap.find(*ci);
+        if (i != clientEventMap.end()) {
+            clientEventMap.erase(*ci);
+        }
+    }
+#endif
+
     SharedProtocol_eventUnsubscribe_result result;
     try {
-        iface_->eventUnsubscribe(args.evnetName, callContext);
+        iface_->eventUnsubscribe(args.eventName, callContext);
     } catch (const std::exception& e) {
         if (this->eventHandler_.get() != NULL) {
             this->eventHandler_->handlerError(ctx, "SharedProtocol.eventUnsubscribe");

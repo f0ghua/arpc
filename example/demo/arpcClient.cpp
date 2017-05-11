@@ -19,10 +19,23 @@
 
 #include <iostream>
 
+#include <thrift/concurrency/ThreadManager.h>
+#include <thrift/concurrency/PlatformThreadFactory.h>
 #include <thrift/protocol/TBinaryProtocol.h>
 #include <thrift/protocol/TJSONProtocol.h>
+#include <thrift/server/TSimpleServer.h>
+#include <thrift/server/TThreadPoolServer.h>
+#include <thrift/server/TThreadedServer.h>
+#include <thrift/transport/TServerSocket.h>
 #include <thrift/transport/TSocket.h>
 #include <thrift/transport/TTransportUtils.h>
+#include <thrift/TToString.h>
+
+#include <boost/make_shared.hpp>
+
+#include <iostream>
+#include <stdexcept>
+#include <sstream>
 
 #include "./gen-cpp/SharedProtocol.h"
 #include "./gen-cpp/DemoService.h"
@@ -30,10 +43,33 @@
 
 using namespace std;
 using namespace apache::thrift;
+using namespace apache::thrift::concurrency;
 using namespace apache::thrift::protocol;
 using namespace apache::thrift::transport;
+using namespace apache::thrift::server;
+
+using boost::shared_ptr;
 
 using namespace demo;
+using namespace shared;
+
+class DemoEventHandler : virtual public DemoEventIf {
+ public:
+  DemoEventHandler() {
+    // Your initialization goes here
+  }
+
+  void notifyDemoSevice(const DemoStruct& vars) {
+    // Your implementation goes here
+    printf("notifyDemoSevice\n");
+  }
+
+  void notifySecdSevice(const DemoStruct& vars) {
+    // Your implementation goes here
+    printf("notifySecdSevice\n");
+  }
+
+};
 
 int main() 
 {
@@ -68,4 +104,18 @@ int main()
     } catch (TException& tx) {
         cout << "ERROR: " << tx.what() << endl;
     }
+
+    // act as a server to handle events
+    int port = 8081;
+    shared_ptr<DemoEventHandler> handler(new DemoEventHandler());
+    shared_ptr<TProcessor> processor(new DemoEventProcessor(handler));
+    shared_ptr<TServerTransport> serverTransport(new TServerSocket(port));
+    shared_ptr<TTransportFactory> transportFactory(new TBufferedTransportFactory());
+    //shared_ptr<TProtocolFactory> protocolFactory(new TBinaryProtocolFactory());
+    shared_ptr<TProtocolFactory> protocolFactory(new TJSONProtocolFactory());
+    
+    TSimpleServer server(processor, serverTransport, transportFactory, protocolFactory);
+
+    cout << "client is in event listening ..." << endl;
+    server.serve();    
 }
