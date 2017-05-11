@@ -138,13 +138,15 @@ public:
         }
     }
 
-    void serviceRegister(const std::vector<std::string> & methodName, const int16_t sevicePort, void *callContext) {
+    int32_t serviceRegister(const std::vector<std::string> & methodName, const int16_t sevicePort, void *callContext) {
         cout << "from host, register service: " << endl;
         for (std::vector<std::string>::const_iterator i = methodName.begin(); 
              i != methodName.end(); 
              ++i)
             std::cout << *i << ' ';
         cout << endl;
+
+        return 0;
     }
     
     void serviceUnregister(const std::vector<std::string> & methodName, void *callContext) {
@@ -269,7 +271,8 @@ void PSProcessor::process_serviceRegister(int32_t seqid, ::apache::thrift::proto
 
     SharedProtocol_serviceRegister_result result;
     try {
-        iface_->serviceRegister(args.methodName, args.sevicePort, callContext);
+        result.success = iface_->serviceRegister(args.methodName, args.sevicePort, callContext);
+        result.__isset.success = true;
     } catch (const std::exception& e) {
         if (this->eventHandler_.get() != NULL) {
             this->eventHandler_->handlerError(ctx, "SharedProtocol.serviceRegister");
