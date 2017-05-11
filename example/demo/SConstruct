@@ -31,6 +31,9 @@ gen_cpp_files = [
 	'gen-cpp/DemoService.cpp',
 	'gen-cpp/demo_types.cpp',
 	'gen-cpp/demo_constants.cpp',
+	'gen-cpp/SharedProtocol.cpp',
+	'gen-cpp/shared_types.cpp',
+	'gen-cpp/shared_constants.cpp',
 ]
 
 src_files_client = [
@@ -43,7 +46,6 @@ src_files_host = [
 
 src_files_server = [
 	'arpcServer.cpp',
-	'arpcMgr.cpp',
 ]
 
 header_files = [

@@ -35,6 +35,7 @@
 #include <stdexcept>
 #include <sstream>
 
+#include "./gen-cpp/SharedProtocol.h"
 #include "./gen-cpp/DemoService.h"
 
 using namespace std;
@@ -47,6 +48,7 @@ using namespace apache::thrift::server;
 using boost::shared_ptr;
 
 using namespace demo;
+using namespace shared;
 
 class DemoServiceHandler : virtual public DemoServiceIf {
 public:
@@ -56,16 +58,17 @@ public:
 
     void setStruct(const int32_t intValue, const std::string& strValue) {
         // Your implementation goes here
-        cout << "setStruct: intValue = " << intValue << ", strValue = " << strValue << endl;
+        cout << "from server, setStruct: intValue = " << intValue << ", strValue = " << strValue << endl;
         intValue_ = intValue;
         strValue_ = strValue;
     }
 
     void getStruct(DemoStruct& _return) {
         // Your implementation goes here
-        cout << "getStruct" << endl;
+        cout << "from server getStruct" << endl;
         _return.intValue = intValue_;
         _return.strValue = strValue_;
+        cout << "to server struct value " << _return.intValue << ", " << _return.strValue << endl;
     }
     
 private:
@@ -75,7 +78,20 @@ private:
 
 
 int main(int argc, char **argv) {
-    int port = 9090;
+    int port = 9091;
+
+    boost::shared_ptr<TTransport> socket(new TSocket("localhost", 9090));
+    boost::shared_ptr<TTransport> transport(new TBufferedTransport(socket));
+    //boost::shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
+    boost::shared_ptr<TProtocol> protocol(new TJSONProtocol(transport));
+    SharedProtocolClient client(protocol);
+
+    transport->open();
+    std::vector<std::string> services;
+    services.push_back("setStruct");
+    client.serviceRegister(services, port);
+    transport->close();
+    
     shared_ptr<DemoServiceHandler> handler(new DemoServiceHandler());
     shared_ptr<TProcessor> processor(new DemoServiceProcessor(handler));
     shared_ptr<TServerTransport> serverTransport(new TServerSocket(port));
