@@ -24,9 +24,40 @@ Export('env')
 
 VariantDir(objroot, 'transport', duplicate=1)
 
-transport_src_files = Glob('transport/*.cpp');
-protocol_src_files = Glob('protocol/*.cpp');
-processor_src_files = Glob('processor/*.cpp');
+transport_src_files = [ #Glob('transport/*.cpp');
+	'transport/TBufferTransports.cpp',
+	'transport/TFDTransport.cpp',
+#	'transport/TFileTransport.cpp',
+#	'transport/THeaderTransport.cpp',
+#	'transport/THttpClient.cpp',
+#	'transport/THttpServer.cpp',
+#	'transport/THttpTransport.cpp',
+#	'transport/TPipe.cpp',
+#	'transport/TPipeServer.cpp',
+	'transport/TServerSocket.cpp',
+	'transport/TSimpleFileTransport.cpp',
+	'transport/TSocket.cpp',
+	'transport/TSocketPool.cpp',
+#	'transport/TSSLServerSocket.cpp',
+#	'transport/TSSLSocket.cpp',
+	'transport/TTransportException.cpp',
+	'transport/TTransportUtils.cpp',
+#	'transport/TZlibTransport.cpp',
+]
+
+protocol_src_files = [ #Glob('protocol/*.cpp');
+	'protocol/TBase64Utils.cpp',
+#	'protocol/TDebugProtocol.cpp',
+#	'protocol/THeaderProtocol.cpp',
+	'protocol/TJSONProtocol.cpp',
+	'protocol/TMultiplexedProtocol.cpp',
+	'protocol/TProtocol.cpp',
+]
+
+processor_src_files = [ #Glob('processor/*.cpp');
+	'processor/PeekProcessor.cpp',
+]
+
 server_src_files = [
 	'server/TConnectedClient.cpp',
 	'server/TServer.cpp',
