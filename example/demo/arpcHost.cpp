@@ -83,6 +83,7 @@ class MyTask : public Runnable {
 	public:
 		MyTask() {}
 		void run();
+		void sendEvent();
 };
 
 void MyTask::run()
@@ -90,8 +91,25 @@ void MyTask::run()
 	int i = 0;
 	while(1) {
 		cout << "count " << i++ << endl;
-		usleep(500000);
+		usleep(1000000); // 1s
+		sendEvent();
 	}
+}
+
+void MyTask::sendEvent()
+{
+    boost::shared_ptr<TTransport> socket(new TSocket("localhost", 9090));
+    boost::shared_ptr<TTransport> transport(new TBufferedTransport(socket));
+    boost::shared_ptr<TProtocol> protocol(new TJSONProtocol(transport));
+    DemoEventClient client(protocol);
+
+    transport->open();
+    GlobalOutput.printf("send event notifyDemoSevice to server.");
+    DemoStruct ds;
+    ds.intValue = 1;
+    ds.strValue = "event";
+    client.notifyDemoSevice(ds);
+    transport->close();    
 }
 
 int main(int argc, char **argv) {

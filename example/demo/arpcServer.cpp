@@ -159,7 +159,7 @@ public:
 
     void notifyDemoSevice(const DemoStruct& vars, void *callContext) {
         // Your implementation goes here
-        cout << "from client, getStruct:" << endl;
+        cout << "from host, notifyDemoSevice:" << endl;
                 
 #ifndef NDEBUG
         map<string, HostInfo>::const_iterator ci = clientEventMap.find((char *)callContext);
@@ -216,7 +216,13 @@ public:
 
     int32_t eventSubscribe(const std::vector<std::string> & eventName, const int16_t eventPort, void *callContext) {
         // Your implementation goes here
-        printf("eventSubscribe\n");
+        cout << "from client, subscribe event: " << endl;
+        for (std::vector<std::string>::const_iterator i = eventName.begin(); 
+             i != eventName.end(); 
+             ++i)
+            std::cout << *i << ' ';
+        cout << endl;
+
         return 0;
     }
 

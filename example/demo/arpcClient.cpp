@@ -61,52 +61,76 @@ class DemoEventHandler : virtual public DemoEventIf {
 
   void notifyDemoSevice(const DemoStruct& vars) {
     // Your implementation goes here
-    printf("notifyDemoSevice\n");
+    GlobalOutput.printf("event from server: notifyDemoSevice - %d, %s", 
+        vars.intValue, vars.strValue.c_str());
   }
 
   void notifySecdSevice(const DemoStruct& vars) {
     // Your implementation goes here
-    printf("notifySecdSevice\n");
+    GlobalOutput.printf("event from server: notifySecdSevice - %d, %s", 
+        vars.intValue, vars.strValue.c_str());
   }
 
 };
 
-int main() 
+int main(int argc, char **argv) 
 {
-    boost::shared_ptr<TTransport> socket(new TSocket("localhost", 9090));
-    boost::shared_ptr<TTransport> transport(new TBufferedTransport(socket));
-    //boost::shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
-    boost::shared_ptr<TProtocol> protocol(new TJSONProtocol(transport));
+    int port = 8081;
+    int clientId = 0;
     
-    DemoServiceClient client(protocol);
-
-    try {
-        transport->open();
-
-        client.setStruct(100, "Hello World");
-        cout << "Set struct: " << endl;
-
-/*
-        try {
-            client.setStruct(101, "Hello World");
-            cout << "Set struct: ";
-        } catch () {
-
-        }
-*/
-        // Note that C++ uses return by reference for complex types to avoid
-        // costly copy construction
-        DemoStruct ds;
-        client.getStruct(ds);
-        cout << "Received struct: " << ds << endl;
-
-        transport->close();
-    } catch (TException& tx) {
-        cout << "ERROR: " << tx.what() << endl;
+    if (argc > 2) {
+        clientId = atoi(argv[1]);
+        port = atoi(argv[2]);
     }
 
+	// act as a client to subscribe events
+    {
+        boost::shared_ptr<TTransport> socket(new TSocket("localhost", 9090));
+        boost::shared_ptr<TTransport> transport(new TBufferedTransport(socket));
+        //boost::shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
+        boost::shared_ptr<TProtocol> protocol(new TJSONProtocol(transport));
+        SharedProtocolClient client(protocol);
+
+        transport->open();
+        std::vector<std::string> events;
+        if (clientId == 0) {
+            events.push_back("notifyDemoSevice");
+        }
+        else {
+            events.push_back("notifySecdSevice");
+        }
+        client.eventSubscribe(events, port);
+        transport->close();
+    }
+    
+    // act as client to request services
+	{
+        boost::shared_ptr<TTransport> socket(new TSocket("localhost", 9090));
+        boost::shared_ptr<TTransport> transport(new TBufferedTransport(socket));
+        //boost::shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
+        boost::shared_ptr<TProtocol> protocol(new TJSONProtocol(transport));
+    
+        DemoServiceClient client(protocol);
+
+        try {
+            transport->open();
+
+            client.setStruct(100, "Hello World");
+            cout << "Set struct: " << endl;
+
+            // Note that C++ uses return by reference for complex types to avoid
+            // costly copy construction
+            DemoStruct ds;
+            client.getStruct(ds);
+            cout << "Received struct: " << ds << endl;
+
+            transport->close();
+        } catch (TException& tx) {
+            cout << "ERROR: " << tx.what() << endl;
+        }
+	}
+
     // act as a server to handle events
-    int port = 8081;
     shared_ptr<DemoEventHandler> handler(new DemoEventHandler());
     shared_ptr<TProcessor> processor(new DemoEventProcessor(handler));
     shared_ptr<TServerTransport> serverTransport(new TServerSocket(port));
@@ -115,7 +139,7 @@ int main()
     shared_ptr<TProtocolFactory> protocolFactory(new TJSONProtocolFactory());
     
     TSimpleServer server(processor, serverTransport, transportFactory, protocolFactory);
-
+	
     cout << "client is in event listening ..." << endl;
     server.serve();    
 }
