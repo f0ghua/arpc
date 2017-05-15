@@ -82,7 +82,8 @@ async_src_files = [
 	'async/TConcurrentClientSyncInfo.cpp',
 ]
 
-env.SharedLibrary(target = 'arpc',
+#env.SharedLibrary(target = 'arpc',
+env.StaticLibrary(target = 'arpc',
 	source = [
 		transport_src_files,
 		protocol_src_files,
