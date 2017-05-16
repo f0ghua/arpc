@@ -23,7 +23,8 @@ lib_header = env.Dir('../../lib/src').abspath
 lib_path = env.Dir('../../lib/src/thrift').abspath
 env.Append(CPPPATH=[lib_header])
 env.Append(LIBPATH = lib_path)
-env.Append(LIBS=['arpc', 'ssl', 'pthread', 'z'])
+#env.Append(LIBS=['arpc', 'ssl', 'pthread', 'z'])
+env.Append(LIBS=['arpc', 'pthread', 'event'])
 Export('env')
 
 def create_objs(SRCS, path=""):
@@ -55,8 +56,8 @@ header_files = [
 
 ]
 
-env.Program('arpcClient', [src_files_client, create_objs(gen_cpp_files)], LIBS=['arpc', 'pthread'])
-env.Program('arpcHost', [src_files_host, create_objs(gen_cpp_files)], LIBS=['arpc', 'pthread'])
+env.Program('arpcClient', [src_files_client, create_objs(gen_cpp_files)])
+env.Program('arpcHost', [src_files_host, create_objs(gen_cpp_files)])
 #env.Program('arpcServer', [src_files_server, create_objs(gen_cpp_files)], LIBS=['arpc', 'pthread'])
 
 

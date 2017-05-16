@@ -65,7 +65,7 @@ server_src_files = [
 	'server/TSimpleServer.cpp',
 	'server/TThreadedServer.cpp',
 	'server/TThreadPoolServer.cpp',
-#	'server/TNonblockingServer.cpp',
+	'server/TNonblockingServer.cpp',
 ]
 
 concurrency_src_files = [

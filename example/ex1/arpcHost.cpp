@@ -24,6 +24,7 @@
 #include <thrift/server/TSimpleServer.h>
 #include <thrift/server/TThreadPoolServer.h>
 #include <thrift/server/TThreadedServer.h>
+#include <thrift/server/TNonblockingServer.h>
 #include <thrift/transport/TServerSocket.h>
 #include <thrift/transport/TSocket.h>
 #include <thrift/transport/TTransportUtils.h>
@@ -47,6 +48,8 @@ using namespace apache::thrift::server;
 using boost::shared_ptr;
 
 using namespace demo;
+
+#define THREAD_NUM 2
 
 class DemoServiceHandler : virtual public DemoServiceIf {
 public:
@@ -88,16 +91,25 @@ int main(int argc, char **argv) {
     // act as a server to handle service requests
     shared_ptr<DemoServiceHandler> handler(new DemoServiceHandler());
     shared_ptr<TProcessor> processor(new DemoServiceProcessor(handler));
-    shared_ptr<TServerTransport> serverTransport(new TServerSocket(port));
-    shared_ptr<TTransportFactory> transportFactory(new TFramedTransportFactory());
     //shared_ptr<TProtocolFactory> protocolFactory(new TBinaryProtocolFactory());
     shared_ptr<TProtocolFactory> protocolFactory(new TJSONProtocolFactory());
+
+    shared_ptr<ThreadManager> threadManager = ThreadManager::newSimpleThreadManager(THREAD_NUM);
+    shared_ptr<PlatformThreadFactory> threadFactory = shared_ptr<PlatformThreadFactory> (new PlatformThreadFactory());
+    threadManager->threadFactory(threadFactory);
+    threadManager->start();	
     
-    TSimpleServer server(processor, serverTransport, transportFactory, protocolFactory);
+    TNonblockingServer server(processor, protocolFactory, port, threadManager);
 
     cout << "Host is in service ..." << endl;
-    server.serve();
-   
+    try {
+		server.serve();
+    }
+	catch(TException e) {
+		printf("Server.serve() failed\n");
+		exit(-1);
+	}
+
     return 0;
 }
 
